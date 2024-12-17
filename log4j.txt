@@ -1,0 +1,2 @@
+%{yyyy-MM-dd HH:mm:ss}DEBUG org.techhub.ClientApp.RestaurantOrderManagementSystem  Main Method Started.. 
+% {yyyy-MM-dd HH:mm:ss} DEBUG org.techhub.ClientApp.RestaurantOrderManagementSystem  Main Method Started.. 
