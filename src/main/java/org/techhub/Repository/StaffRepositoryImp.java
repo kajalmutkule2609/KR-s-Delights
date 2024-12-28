@@ -9,12 +9,12 @@ public class StaffRepositoryImp extends DBUser implements StaffRepository {
 	@Override
 	public boolean isRegisteredStaff(StaffModel model) {
 		try {
-			cstmt = conn.prepareCall("{call addStaff(?,?,?,?,?,?)}");
+			cstmt = conn.prepareCall("{call addUser(?,?,?,?,?,?)}");
 			cstmt.setString(1, model.getStaffName());
 			cstmt.setString(2, model.getEmail());
 			cstmt.setString(3, model.getContact());
-			cstmt.setString(4, model.getAddress());
-			cstmt.setString(5, model.getPassword());
+			cstmt.setString(4, model.getPassword());
+			cstmt.setString(5, model.getAddress());
 			cstmt.setString(6, model.getRole());
 			int result = cstmt.executeUpdate();
 			return result > 0 ? true : false;
@@ -28,7 +28,7 @@ public class StaffRepositoryImp extends DBUser implements StaffRepository {
 	public Optional<List<StaffModel>> getAllStaff() {
 		try {
 			list = new ArrayList<>();
-			stmt = conn.prepareStatement("Select * from StaffMaster");
+			stmt = conn.prepareStatement("Select * from UserMaster where not Role='Customer'");
 			rs = stmt.executeQuery();
 			while (rs.next()) {
 				list.add(new StaffModel(rs.getInt(1), rs.getString(2), rs.getString(3), rs.getString(4),
@@ -44,7 +44,7 @@ public class StaffRepositoryImp extends DBUser implements StaffRepository {
 	@Override
 	public String getStaffByEmail(String email) {
 		try {
-			stmt = conn.prepareStatement(Query.getStaffByEmail);
+			stmt = conn.prepareStatement(Query.getUserByEmail);
 			stmt.setString(1, email);
 			rs = stmt.executeQuery();
 			if (rs.next()) {
@@ -59,7 +59,7 @@ public class StaffRepositoryImp extends DBUser implements StaffRepository {
 	@Override
 	public boolean deleteStaff(String email) {
 		try {
-			stmt = conn.prepareStatement("call deleteStaff(?)");
+			stmt = conn.prepareStatement("call deleteUser(?)");
 			stmt.setString(1, email);
 			int value = stmt.executeUpdate();
 			if (value > 0) {
@@ -77,7 +77,7 @@ public class StaffRepositoryImp extends DBUser implements StaffRepository {
 	@Override
 	public String validateUser(String email, String password) {
 		try {
-			stmt = conn.prepareStatement("Select Role from User where Email=? and Password=?");
+			stmt = conn.prepareStatement("Select Role from UserLogin where Email=? and Password=?");
 			stmt.setString(1, email);
 			stmt.setString(2, password);
 			rs = stmt.executeQuery();

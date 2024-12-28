@@ -27,5 +27,9 @@ public class CustomerServiceImp implements CustomerService {
 	public boolean deleteCustomer(String email) {
 		return custRepository.deleteCustomer(email);
 	}
+	@Override
+	public CustomerModel getCustomer(String Email) {
+		return custRepository.getCustomer(Email);
+	}
 
 }

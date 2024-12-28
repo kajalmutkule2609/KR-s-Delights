@@ -7,6 +7,8 @@ import org.techhub.Model.DishModel;
 
 public interface DishService {
 	public boolean addBulkDishes(String MenuType, String fileName);
+	
+	public boolean addDish(String MenuType,DishModel model);
 
 	public List<DishModel> showAllDishes(String type);
 

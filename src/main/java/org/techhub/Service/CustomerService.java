@@ -14,4 +14,6 @@ public interface CustomerService {
 	public String getCustomerByEmail(String email);
 
 	public boolean deleteCustomer(String email);
+	
+	public CustomerModel getCustomer(String Email);
 }

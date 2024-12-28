@@ -29,4 +29,20 @@ public class OrderServiceImp implements OrderService {
 		return orderRepo.generateBill(bill);
 	}
 
+	@Override
+	public List<OrderModel> getOrdersByOrderNo(int orderNo) {
+		return orderRepo.getOrdersByOrderNo(orderNo);
+	}
+
+	@Override
+	public boolean getBillByOrderNo(BillModel bill, int orderNo) {
+		return orderRepo.getBillByOrderNo(bill, orderNo);
+		
+	}
+
+	@Override
+	public boolean completePayment(double billAmount,int tableNo) {
+		return orderRepo.completePayment(billAmount,tableNo);
+	}
+
 }

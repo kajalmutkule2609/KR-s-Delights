@@ -11,4 +11,5 @@ public class OrderModel extends TableModel {
 	private int quantity;
 	private int price;
 	private int tableNo;
+	private String orderStatus;
 }

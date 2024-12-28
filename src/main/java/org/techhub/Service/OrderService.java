@@ -14,4 +14,10 @@ public interface OrderService {
 
 	public boolean generateBill(BillModel bill);
 	
+	public List<OrderModel> getOrdersByOrderNo(int orderNo);
+	
+	public boolean getBillByOrderNo(BillModel bill, int orderNo);
+	
+	public boolean completePayment(double billAmount,int tableNo);
+	
 }

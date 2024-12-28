@@ -10,6 +10,8 @@ public class DishRepositoryImp extends DBUser implements DishRepository {
 
 	@Override
 	public boolean addBulkDishes(String menuType, String fileName) {
+
+
 		try {
 			String type = menuType + ".csv";
 			BufferedReader br = new BufferedReader(new FileReader(fileName));
@@ -136,6 +138,35 @@ public class DishRepositoryImp extends DBUser implements DishRepository {
 			System.out.println("Error getting dish: " + ex.getMessage());
 		}
 		return null;
+	}
+
+	@Override
+	public boolean addDish(String MenuType, DishModel model) {
+		String Query="Insert into DishMaster (DishName,Price,Category) values(?,?,?)";
+		try {
+			stmt=conn.prepareStatement(Query);
+			stmt.setString(1,model.getDishName());
+			stmt.setInt(2, model.getPrice());
+			stmt.setString(3, model.getCategory());
+			
+			int result=stmt.executeUpdate();
+			if(result>0) {
+					Query="Insert Into MenuDIshJoin Values((Select MenuId from MenuMaster Where MenuType=?),(Select Max(DishId) from DIshMaster Where DishName=?))";
+					stmt=conn.prepareStatement(Query);
+					stmt.setString(1, MenuType);
+					stmt.setString(2, model.getDishName());
+					result=stmt.executeUpdate();
+					return result>0;
+				}
+			else {
+				System.out.println("Problem Occurred While Inserting Dish !!!");
+			}
+			
+		}
+		catch(Exception ex) {
+			System.out.println("Error Is:"+ex.getMessage());
+		}
+		return false;
 	}
 
 }

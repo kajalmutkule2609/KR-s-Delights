@@ -31,7 +31,7 @@ public class CustomerRepositoryImp extends DBUser implements CustomerRepository 
 	public Optional<List<CustomerModel>> getAllCustomers() {
 		try {
 			list = new ArrayList<>();
-			stmt = conn.prepareStatement("Select * from CustomerMaster");
+			stmt = conn.prepareStatement("Select * from UserMaster where Role='Customer'");
 			rs = stmt.executeQuery();
 			while (rs.next()) {
 				list.add(new CustomerModel(rs.getInt(1), rs.getString(2), rs.getString(3), rs.getString(4),
@@ -47,7 +47,7 @@ public class CustomerRepositoryImp extends DBUser implements CustomerRepository 
 	@Override
 	public String getCustomerByEmail(String email) {
 		try {
-			stmt = conn.prepareStatement(Query.getCustByEmail);
+			stmt = conn.prepareStatement(Query.getUserByEmail);
 			stmt.setString(1, email);
 			rs = stmt.executeQuery();
 			if (rs.next()) {
@@ -62,7 +62,7 @@ public class CustomerRepositoryImp extends DBUser implements CustomerRepository 
 	@Override
 	public boolean deleteCustomer(String email) {
 		try {
-			stmt = conn.prepareStatement("call deleteCustomer(?)");
+			stmt = conn.prepareStatement("call deleteUser(?)");
 			stmt.setString(1, email);
 			int value = stmt.executeUpdate();
 			if (value > 0) {
@@ -75,6 +75,23 @@ public class CustomerRepositoryImp extends DBUser implements CustomerRepository 
 			return false;
 		}
 
+	}
+	@Override
+	public CustomerModel getCustomer(String Email) {
+		String query="select * from UserMaster where Email=?";
+		try {
+			stmt=conn.prepareStatement(query);
+			stmt.setString(1,Email);
+			rs=stmt.executeQuery();
+			if(rs.next()) {
+				return new CustomerModel(rs.getInt(1),rs.getString(2),rs.getString(3),rs.getString(4),rs.getString(5),rs.getString(6),rs.getString(7));
+			}
+		}
+		catch(Exception ex) {
+			System.out.println("Error Is:"+ex.getMessage());
+		}
+		
+		return null;
 	}
 
 }

@@ -34,4 +34,9 @@ public class DishServiceImp implements DishService {
 		return dishRepo.getDish(dishId);
 	}
 
+	@Override
+	public boolean addDish(String MenuType, DishModel model) {
+		return dishRepo.addDish(MenuType, model);
+	}
+
 }

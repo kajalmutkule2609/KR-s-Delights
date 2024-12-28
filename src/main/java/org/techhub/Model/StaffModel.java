@@ -11,7 +11,8 @@ public class StaffModel {
 	private String staffName;
 	private String email;
 	private String contact;
-	private String address;
 	private String Password;
+	private String address;
 	private String role;
+	
 }

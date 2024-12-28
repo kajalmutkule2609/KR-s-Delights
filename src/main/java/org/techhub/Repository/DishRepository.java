@@ -5,6 +5,8 @@ import java.util.*;
 
 public interface DishRepository {
 	public boolean addBulkDishes(String MenuType, String fileName);
+	
+	public boolean addDish(String MenuType,DishModel model);
 
 	public List<DishModel> showAllDishes(String type);
 
