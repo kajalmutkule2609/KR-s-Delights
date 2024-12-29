@@ -155,7 +155,7 @@ public class OrderRepositoryImp extends DBUser implements OrderRepository {
 	    		+"JOIN TableMaster t ON t.tableNo = o.tableNo "
 	    		+"SET b.billstatus = IF(b.TotalBill = ?, 'paid', b.billstatus), "
 	    		    +"o.orderStatus = 'complete', "
-	    		   +"t.custId = NULL, "
+	    		   +"t.userId = NULL, "
 	    		    +"t.status = 0 "
 	    		+"WHERE t.tableNo = ?";
 	    
