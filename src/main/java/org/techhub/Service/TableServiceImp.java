@@ -17,4 +17,9 @@ public class TableServiceImp implements TableService {
 		return tableRepo.reserveTable(tableNo, email);
 	}
 
+	@Override
+	public String getEmailByTableNo(int tableNo) {
+		return tableRepo.getEmailByTableNo(tableNo);
+	}
+
 }

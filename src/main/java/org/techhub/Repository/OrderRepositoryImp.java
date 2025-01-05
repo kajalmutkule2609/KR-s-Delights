@@ -4,7 +4,7 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.techhub.ClientApp.RestaurantOrderManagementSystem;
 import org.techhub.Model.BillModel;
-
+import org.techhub.Model.CustomerOrderHistoryModel;
 import org.techhub.Model.DishModel;
 import org.techhub.Model.FeedBackModel;
 import org.techhub.Model.OrderModel;
@@ -200,6 +200,27 @@ public class OrderRepositoryImp extends DBUser implements OrderRepository {
 	        System.out.println("Error Is:" + ex.getMessage());
 	    }
 	    return false;
+	}
+
+	@Override
+	public boolean checkCustomerOrders(String email) {
+		String query="SELECT Email FROM Customerhistory WHERE count > 5 and Email=?";
+		try {
+			stmt=conn.prepareStatement(query);
+			stmt.setString(1,email);
+			rs=stmt.executeQuery();
+			if(rs.next()) {
+				return true;
+			}
+			else {
+				return false;
+			}
+		}
+		catch(Exception ex) {
+			System.out.println("Error is:"+ex.getMessage());
+			
+		}
+		return false;
 	}
 
 

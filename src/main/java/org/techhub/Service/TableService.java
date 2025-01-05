@@ -8,4 +8,6 @@ public interface TableService {
 	public boolean showAvailableTables();
 
 	public boolean reserveTable(int tableNo, String email);
+	
+	public String getEmailByTableNo(int tableNo);
 }

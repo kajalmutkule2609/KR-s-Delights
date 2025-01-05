@@ -24,4 +24,6 @@ public interface OrderService {
 	
 	public boolean getFeedback(FeedBackModel model);
 	
+	public boolean checkCustomerOrders(String email);
+	
 }

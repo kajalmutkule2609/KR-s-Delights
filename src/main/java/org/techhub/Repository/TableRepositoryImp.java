@@ -61,4 +61,27 @@ public class TableRepositoryImp extends DBUser implements TableRepository {
 		return false;
 	}
 
+	@Override
+	public String getEmailByTableNo(int tableNo) {
+		String query="SELECT u.Email "
+				+ "FROM usermaster "
+				+ "JOIN tablemaster t ON u.userId = t.userId "
+				+ "WHERE t.tableNo = ?";
+		try {
+			stmt=conn.prepareStatement(query);
+			stmt.setInt(1, tableNo);
+			rs=stmt.executeQuery();
+			if(rs.next()) {
+				return rs.getString("email");
+			}
+			else {
+				return null;
+			}
+		}
+		catch(Exception ex) {
+			System.out.println("Error Is:"+ex.getMessage());
+		}
+		return null;
+	}
+
 }

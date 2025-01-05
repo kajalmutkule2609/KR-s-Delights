@@ -23,6 +23,7 @@ public class RestaurantOrderManagementSystem {
 	private static int verificationCode;
 	public static List<Integer> orderIds = new ArrayList<>();
 	public static double newUserDis=0;
+	public static double oldCustDis=0;
 
 	public static void main(String[] args) throws InterruptedException {
 		logger.debug(" Main Method Started..");
@@ -286,6 +287,9 @@ public class RestaurantOrderManagementSystem {
 					if(orderService.checkIfCustomerIsNew(userEmail1)) {
 						newUserDis=0.05;
 					}
+					if(orderService.checkCustomerOrders(userEmail1)) {
+						oldCustDis=0.05;
+					}
 					if (cmodel != null) {
 						System.out.println("----------------------------------------------------------------------");
 						System.out.println("Customer Name:" + cmodel.getCustName());
@@ -293,7 +297,7 @@ public class RestaurantOrderManagementSystem {
 						System.out.println("Contact:" + cmodel.getCustContact());
 						System.out.println("----------------------------------------------------------------------");
 						List<OrderModel> orders = orderService.ViewOrderByTableNo(tableNo1);
-						generateBill(orders, orderService,newUserDis);
+						generateBill(orders, orderService,newUserDis,oldCustDis);
 					} else {
 						System.out.println("Invalid MailId !!!!");
 					}
@@ -341,7 +345,7 @@ public class RestaurantOrderManagementSystem {
 					FeedBackModel model=new FeedBackModel(0,feedBack,rating,userEmail1);
 					if(orderService.getFeedback(model)) {
 						System.out.println("FeedBack Added Successfully");
-						System.out.println("You Rated Us "+ rating+" out of ***** Thank You");
+						System.err.println("You Rated Us "+ rating+" out of ***** Thank You");
 					}
 					else {
 						System.out.println("Feedback not added !!!");
@@ -832,6 +836,7 @@ public class RestaurantOrderManagementSystem {
 				System.out.println("2:VIEW TABLEWISE ORDERS");
 				System.out.println("3:GENERATE BILL");
 				System.out.println("4:COMPLETE PAYMENT");
+				System.out.println("5:RATE US");
 				System.out.println("***************************************************************\n");
 
 				System.out.print("Enter Choice:");
@@ -892,14 +897,18 @@ public class RestaurantOrderManagementSystem {
 					break;
 				case 3:
 					logger.info("Generating Bill...");
-					if(orderService.checkIfCustomerIsNew(userEmail1)) {
-						newUserDis=0.05;
-					}
 					System.out.print("Enter TableNo:");
 					tableNo = sc.nextInt();
 					tableNo1 = tableNo;
+					userEmail1=tableService.getEmailByTableNo(tableNo);
+					if(orderService.checkIfCustomerIsNew(userEmail1)) {
+						newUserDis=0.05;
+					}
+					if(orderService.checkCustomerOrders(userEmail1)) {
+						newUserDis=0.05;
+					}
 					List<OrderModel> orders = orderService.ViewOrderByTableNo(tableNo);
-					generateBill(orders, orderService,newUserDis);
+					generateBill(orders, orderService,newUserDis,oldCustDis);
 					break;
 				case 4:
 					logger.info("Complete Payment Process....");
@@ -911,6 +920,41 @@ public class RestaurantOrderManagementSystem {
 						System.out.println("\n_______________________________________________________________");
 					} else {
 						System.out.println("Payment Not Completed !!! Check Amount ...");
+					}
+					break;
+				case 5:
+					String feedBack="";
+					String rating="";
+					System.out.print("Rate Us From 1 to 5 :");
+					switch(sc.nextInt()) {
+					case 1:
+						feedBack="Very Bad";
+						rating="*";
+						break;
+					case 2:
+						feedBack="Bad";
+						rating="**";
+						break;
+					case 3:
+						feedBack="Good";
+						rating="***";
+						break;
+					case 4:
+						feedBack="Very Good";
+						rating="****";
+						break;
+					case 5:
+						feedBack="Excellent Service";
+						rating="*****";
+						break;
+					}
+					FeedBackModel fmodel=new FeedBackModel(0,feedBack,rating,userEmail1);
+					if(orderService.getFeedback(fmodel)) {
+						System.out.println("FeedBack Added Successfully");
+						System.err.println("You Rated Us "+ rating+" out of ***** Thank You");
+					}
+					else {
+						System.out.println("Feedback not added !!!");
 					}
 					break;
 				default:
@@ -1080,13 +1124,14 @@ public class RestaurantOrderManagementSystem {
 
 	}
 
-	private static void generateBill(List<OrderModel> orders, OrderService orderService,double newUserDiscount) throws InterruptedException {
+	private static void generateBill(List<OrderModel> orders, OrderService orderService,double newUserDiscount,double oldCustomerDiscount) throws InterruptedException {
 	    double totalCost = 0;
 	    double GST = 0;
 	    double totalAmount = 0;
 	    double serviceCharges = 0;
 	    double discount = 0;
 	    double newUserDis=0;
+	    double oldCustDis=0;
 	    String discountPer="";
 
 	    for (OrderModel order : orders) {
@@ -1109,7 +1154,10 @@ public class RestaurantOrderManagementSystem {
 	    	newUserDis=totalAmount*0.05;
 	    }
 	    totalAmount=totalAmount-newUserDis;
-
+	    if(oldCustomerDiscount>0) {
+	    	oldCustDis=totalAmount*0.05;
+	    }
+	    totalAmount=totalAmount-oldCustDis;
 	    CustomerModel model = new CustomerModel();
 	    System.out.println("Bill Details:");
 	    System.out.println("--------------------------------------------------------------------------");
@@ -1127,6 +1175,9 @@ public class RestaurantOrderManagementSystem {
 	    System.out.println("Discount(On Order Value): "+"("+discountPer+")" + discount);
 	    if(newUserDis>0) {
 	    	System.out.println("New User Discount: "+newUserDis+" (5%)");
+	    }
+	    if(oldCustDis>0) {
+	    	System.out.println("Old Customer Discount: "+oldCustDis+" (5%)");
 	    }
 	    System.out.println("Total Amount: " + totalAmount);
 	    System.out.println("Bill Date: " + LocalDate.now());

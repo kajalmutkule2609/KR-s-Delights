@@ -55,4 +55,9 @@ public class OrderServiceImp implements OrderService {
 		return orderRepo.getFeedback(model);
 	}
 
+	@Override
+	public boolean checkCustomerOrders(String email) {
+		return orderRepo.checkCustomerOrders(email);
+	}
+
 }

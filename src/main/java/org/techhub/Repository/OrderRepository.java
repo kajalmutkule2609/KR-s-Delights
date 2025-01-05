@@ -21,4 +21,6 @@ public interface OrderRepository {
 	public boolean checkIfCustomerIsNew(String email);
 	
 	public boolean getFeedback(FeedBackModel model);
+	
+	public boolean checkCustomerOrders(String email);
 }
