@@ -31,7 +31,7 @@ public class CustomerRepositoryImp extends DBUser implements CustomerRepository 
 	public Optional<List<CustomerModel>> getAllCustomers() {
 		try {
 			list = new ArrayList<>();
-			stmt = conn.prepareStatement("Select * from UserMaster where Role='Customer'");
+			stmt = conn.prepareStatement(Query.getAllCustomers);
 			rs = stmt.executeQuery();
 			while (rs.next()) {
 				list.add(new CustomerModel(rs.getInt(1), rs.getString(2), rs.getString(3), rs.getString(4),
@@ -78,9 +78,8 @@ public class CustomerRepositoryImp extends DBUser implements CustomerRepository 
 	}
 	@Override
 	public CustomerModel getCustomer(String Email) {
-		String query="select * from UserMaster where Email=?";
 		try {
-			stmt=conn.prepareStatement(query);
+			stmt=conn.prepareStatement(Query.getCustomerByEmail);
 			stmt.setString(1,Email);
 			rs=stmt.executeQuery();
 			if(rs.next()) {

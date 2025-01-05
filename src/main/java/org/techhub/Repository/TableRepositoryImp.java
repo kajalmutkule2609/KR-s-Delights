@@ -8,10 +8,9 @@ public class TableRepositoryImp extends DBUser implements TableRepository {
 
 	@Override
 	public boolean showAvailableTables() {
-		String query = "SELECT tableno FROM tableMaster WHERE status=0";
 		try {
 			int cnt=1;
-			stmt = conn.prepareStatement(query);
+			stmt = conn.prepareStatement(Query.getAvailableTables);
 			rs = stmt.executeQuery();
 			System.out.println("Available tables:");
 			while (rs.next()) {
@@ -32,16 +31,14 @@ public class TableRepositoryImp extends DBUser implements TableRepository {
 
 	@Override
 	public boolean reserveTable(int tableNo, String email) {
-		String Query = "Select userId from UserMaster where Email=?";
 		try {
-			stmt = conn.prepareStatement(Query);
+			stmt = conn.prepareStatement(Query.getUserIdByEmail);
 			stmt.setString(1, email);
 			rs = stmt.executeQuery();
 			if (rs.next()) {
 				int userId = rs.getInt(1);
-				Query = "Update TableMaster set status=1, userId=? where tableNo=? and status=0";
 				try {
-					stmt = conn.prepareStatement(Query);
+					stmt = conn.prepareStatement(Query.updateStatus);
 					stmt.setInt(1, userId);
 					stmt.setInt(2, tableNo);
 

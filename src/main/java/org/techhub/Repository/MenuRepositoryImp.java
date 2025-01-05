@@ -9,9 +9,8 @@ public class MenuRepositoryImp extends DBUser implements MenuRepository {
 	@Override
 	public Optional<List<MenuModel>> showMenus() {
 		list = new ArrayList<MenuModel>();
-		String Query = "Select * from MenuMaster";
 		try {
-			stmt = conn.prepareStatement(Query);
+			stmt = conn.prepareStatement(Query.getAllMenu);
 			rs = stmt.executeQuery();
 			while (rs.next()) {
 				list.add(new MenuModel(rs.getInt(1), rs.getString(2)));
@@ -43,7 +42,7 @@ public class MenuRepositoryImp extends DBUser implements MenuRepository {
 	@Override
 	public boolean addMenuType(MenuModel model) {
 		try {
-			stmt = conn.prepareStatement("Insert into MenuMaster Values('0',?)");
+			stmt = conn.prepareStatement(Query.addMenu);
 			stmt.setInt(1, model.getMenuId());
 			stmt.setString(1, model.getMenyType());
 			int result = stmt.executeUpdate();
@@ -57,7 +56,7 @@ public class MenuRepositoryImp extends DBUser implements MenuRepository {
 	@Override
 	public String searchMenuType(String type) {
 		try {
-			stmt = conn.prepareStatement("Select * from MenuMaster Where menuType=?");
+			stmt = conn.prepareStatement(Query.getAllMenuByType);
 			stmt.setString(1, type);
 			rs = stmt.executeQuery();
 			if (rs.next()) {
@@ -74,7 +73,7 @@ public class MenuRepositoryImp extends DBUser implements MenuRepository {
 	@Override
 	public boolean deleteMenuType(String type) {
 		try {
-			stmt = conn.prepareStatement("delete from menuMaster where menuType=?");
+			stmt = conn.prepareStatement(Query.deleteMenuByType);
 			stmt.setString(1, type);
 			int result = stmt.executeUpdate();
 			return result > 0 ? true : false;

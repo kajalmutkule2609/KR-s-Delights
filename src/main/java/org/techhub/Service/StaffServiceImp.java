@@ -33,4 +33,9 @@ public class StaffServiceImp implements StaffService {
 	public String validateUser(String email, String password) {
 		return staffRepo.validateUser(email, password);
 	}
+
+	@Override
+	public boolean forgotPassword(String email,String password) {
+		return staffRepo.forgotPassword(email,password);
+	}
 }

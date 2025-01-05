@@ -22,6 +22,7 @@ public class RestaurantOrderManagementSystem {
 	private static String storedEmail;
 	private static int verificationCode;
 	public static List<Integer> orderIds = new ArrayList<>();
+	public static double newUserDis=0;
 
 	public static void main(String[] args) throws InterruptedException {
 		logger.debug(" Main Method Started..");
@@ -51,13 +52,13 @@ public class RestaurantOrderManagementSystem {
 			Thread.sleep(1000);
 			System.err.println("1:LOGIN");
 			System.err.println("2:REGISTER");
-			System.out.println("--------------------------------------------");
+			System.out.println("---------------------------------------------------------");
 			System.out.print("Enter Choice:");
 			switch (sc.nextInt()) {
-			
+
 			case 1:
 				sc.nextLine();
-				System.out.println("*******************LOGIN******************");
+				System.out.println("****************************LOGIN*****************************");
 				System.out.println("\nLogin To the System");
 				System.out.print("Enter Email:");
 				String userEmail = sc.nextLine();
@@ -71,16 +72,46 @@ public class RestaurantOrderManagementSystem {
 					isLoggedIn = true;
 					attempts = 3;
 				} else {
+					logger.info("Login Failed !!!!");
 					attempts++;
 					System.out.println("Invalid email or password. Attempts remaining: " + (3 - attempts));
-					logger.info("Login Failed !!!!");
 					isLoggedIn = false;
+					if (attempts == 3 && isLoggedIn == false) {
+						System.out.println("Please Try Again After Some time !!!");
+						logger.info("Login Failed !!!!");
+						return;
+					}
+					System.out.print("Forgot Password ?(Y/N) :");
+					String forgotPass = sc.nextLine();
+					if (!forgotPass.equalsIgnoreCase("N")) {
+						System.out.print("Enter Email:");
+						String mail = sc.nextLine();
+						System.out.println("Verify Email to Proceed...");
+						verificationCode = EmailVerification.generateVerificationCode();
+						EmailVerification.sendVerificationEmail(storedEmail, verificationCode);
+						System.out.println("Enter Verification Code:");
+						int verifyCode = sc.nextInt();
+						if (verificationCode == verifyCode) {
+							System.out.print("Please enter the code:");
+							System.out.print("Enter New Password:");
+							String pass = sc.nextLine();
+							System.out.print("Confirm Password:");
+							String confirmPass = sc.nextLine();
+							if (pass.equals(confirmPass)) {
+								if (staffService.forgotPassword(mail, pass)) {
+									System.out.println("Password Changed Successfully...");
+								} else {
+									System.out.println("Password Not Changed !!");
+								}
+							} else {
+								System.out.println("PassWord and Confirm password is Different !!!");
+							}
+						} else {
+							System.out.println("Wrong verification code entered !!!");
+						}
+					}
 				}
-				if (attempts > 3 && isLoggedIn == false) {
-					System.out.println("Invalid email or password. Attempts remaining: " + (3 - attempts));
-					logger.info("Login Failed !!!!");
-					return;
-				}
+				
 				break;
 			case 2:
 				System.out.println("Register");
@@ -163,7 +194,7 @@ public class RestaurantOrderManagementSystem {
 				|| staffService.validateUser(userEmail1, password1).equalsIgnoreCase("Waiter")) {
 			logger.info("User Validated Successfully.....");
 			do {
-				System.out.println("\n**************CUSTOMER MENU***************");
+				System.out.println("\n**********************CUSTOMER MENU**************************");
 				System.out.println("0:LOGOUT");
 				System.out.println("1:VIEW UNOCCUPIED TABLES");
 				System.out.println("2:VIEW MAIN MENU");
@@ -171,7 +202,8 @@ public class RestaurantOrderManagementSystem {
 				System.out.println("4:PLACE ORDER");
 				System.out.println("5:VIEW BILL");
 				System.out.println("6:COMPLETE PAYMENT");
-				System.out.println("******************************************\n");
+				System.out.println("7:RATE US");
+				System.out.println("***************************************************************\n");
 
 				System.out.print("\nEnter Choice:");
 
@@ -179,11 +211,12 @@ public class RestaurantOrderManagementSystem {
 
 				case 0:
 					logger.info("Exiting .....");
-					System.err.println("\n--------------------You Have Successfully Logged Out-------------------");
+					System.err.println(
+							"\n------------------------------You Have Successfully Logged Out-------------------");
 					System.exit(0);
 				case 1:
 					logger.info("Displaying Unoccupied Tables");
-					System.out.println("________________________________________________________________");
+					System.out.println("_______________________________________________________________________");
 					System.out.println("Display All UnOccupied Tables....");
 					if (!tableService.showAvailableTables()) {
 						System.out.println("No Tables Are Available");
@@ -191,13 +224,13 @@ public class RestaurantOrderManagementSystem {
 					break;
 				case 2:
 					logger.info("Displaying Food Menu...");
-					System.out.println("_______________________________________________________________");
+					System.out.println("_______________________________________________________________________");
 					System.out.println("View Main Menu...");
 					showFoodMenu(menuService);
 					break;
 				case 3:
 					logger.info("Display Dishes Under Specific Menu Type...");
-					System.out.println("_______________________________________________________________");
+					System.out.println("_______________________________________________________________________");
 					showFoodMenu(menuService);
 					sc.nextLine();
 					showDishes(menuService, dishService, sc);
@@ -205,7 +238,8 @@ public class RestaurantOrderManagementSystem {
 				case 4:
 					logger.info("Reserving Table And Placing The Order...");
 					sc.nextLine();
-					System.out.println("________________________________________________________________");
+					orderList.clear();
+					System.out.println("___________________________________________________________________________");
 					if (tableService.showAvailableTables()) {
 						System.out.print("\nEnter Table No: ");
 						int tableNo = sc.nextInt();
@@ -216,9 +250,12 @@ public class RestaurantOrderManagementSystem {
 							boolean orderFlag = true;
 							while (orderFlag == true) {
 								showFoodMenu(menuService);
-								showDishes(menuService, dishService, sc);
-								OrderModel order = placeOrder(sc, dishService, tableNo);
-								orderList.add(order);
+								if (showDishes(menuService, dishService, sc)) {
+									OrderModel order = placeOrder(sc, dishService, tableNo);
+									orderList.add(order);
+								} else {
+									System.out.println("Cannot Add Item from Given Menu !!");
+								}
 								System.out.print("Want To Add More Items(Y/N): ");
 								String answer = sc.nextLine();
 								if (answer.equalsIgnoreCase("N")) {
@@ -240,15 +277,23 @@ public class RestaurantOrderManagementSystem {
 					}
 					break;
 				case 5:
+					Thread.sleep(500);
 					logger.info("Showing Bill...");
+					System.err.println("New Year Special Offer...");
+					System.err.println("10% Discount on Orders Above 500");
+					System.err.println("20% Discount on Orders Above 1000");
 					CustomerModel cmodel = custService.getCustomer(userEmail1);
+					if(orderService.checkIfCustomerIsNew(userEmail1)) {
+						newUserDis=0.05;
+					}
 					if (cmodel != null) {
+						System.out.println("----------------------------------------------------------------------");
 						System.out.println("Customer Name:" + cmodel.getCustName());
 						System.out.println("Email:" + cmodel.getCustEmail());
 						System.out.println("Contact:" + cmodel.getCustContact());
-						System.out.println("-------------------------------------------------");
+						System.out.println("----------------------------------------------------------------------");
 						List<OrderModel> orders = orderService.ViewOrderByTableNo(tableNo1);
-						generateBill(orders, orderService);
+						generateBill(orders, orderService,newUserDis);
 					} else {
 						System.out.println("Invalid MailId !!!!");
 					}
@@ -256,16 +301,50 @@ public class RestaurantOrderManagementSystem {
 					break;
 				case 6:
 					logger.info("Complete Payment Process....");
-					System.out.println("_________________________________________________________");
+					System.out.println("___________________________________________________________________________");
 					System.out.print("Enter Bill Amount:");
 					double amount = sc.nextDouble();
-					// System.out.println("OrderIds are:"+orderIds);
 					if (orderService.completePayment(amount, tableNo1)) {
 						System.out.println("Payment is Completed..");
 						System.err.println("\n\n🩷🤗🤗🩷..THANK YOU FOR CHOOSING US..VISIT AGAIN..🩷🤗🤗🩷\n");
-						// System.exit(0);
+						Thread.sleep(500);
 					} else {
 						System.out.println("Payment Not Completed !!! Check Amount ...");
+					}
+					break;
+				case 7:
+					String feedBack="";
+					String rating="";
+					System.out.print("Rate Us From 1 to 5 :");
+					switch(sc.nextInt()) {
+					case 1:
+						feedBack="Very Bad";
+						rating="*";
+						break;
+					case 2:
+						feedBack="Bad";
+						rating="**";
+						break;
+					case 3:
+						feedBack="Good";
+						rating="***";
+						break;
+					case 4:
+						feedBack="Very Good";
+						rating="****";
+						break;
+					case 5:
+						feedBack="Excellent Service";
+						rating="*****";
+						break;
+					}
+					FeedBackModel model=new FeedBackModel(0,feedBack,rating,userEmail1);
+					if(orderService.getFeedback(model)) {
+						System.out.println("FeedBack Added Successfully");
+						System.out.println("You Rated Us "+ rating+" out of ***** Thank You");
+					}
+					else {
+						System.out.println("Feedback not added !!!");
 					}
 					break;
 				default:
@@ -278,14 +357,14 @@ public class RestaurantOrderManagementSystem {
 		} else if (staffService.validateUser(userEmail1, password1).equalsIgnoreCase("Admin")) {
 			logger.info("User Validated Successfully.....");
 			do {
-				System.out.println("\n******************MAIN MENU****************");
+				System.out.println("\n**************************MAIN MENU*************************");
 				System.out.println("0:LOGOUT");
-				System.out.println("1:CUTOMER");
+				System.out.println("1:CUSTOMER");
 				System.out.println("2:STAFF");
 				System.out.println("3:MENU");
 				System.out.println("4:DISHES");
 				System.out.println("5:ORDERS");
-				System.out.println("*****************************************\n");
+				System.out.println("***************************************************************\n");
 
 				System.out.print("Enter Choice:");
 				int choice = sc.nextInt();
@@ -303,13 +382,13 @@ public class RestaurantOrderManagementSystem {
 					logger.info("Entering Into Customer Menu.....");
 					boolean flag = true;
 					do {
-						System.out.println("\n**************CUSTOMER MENU************");
+						System.out.println("\n***********************CUSTOMER MENU*************************");
 						System.out.println("0:EXIT CUSTOMER MENU");
 						System.out.println("1:ADD NEW CUSTOMER");
 						System.out.println("2:VIEW ALL CUSTOMERS");
 						System.out.println("3:SEARCH CUSTOMER");
 						System.out.println("4:DELETE CUSTOMER");
-						System.out.println("**************************************\n");
+						System.out.println("***************************************************************\n");
 
 						System.out.print("Enter Choice:");
 						switch (sc.nextInt()) {
@@ -326,7 +405,7 @@ public class RestaurantOrderManagementSystem {
 						case 2:
 							logger.info("Display All Customer Details.....");
 							System.out.println("Display All Customers......");
-							System.out.println("__________________________________________________________\n");
+							System.out.println("____________________________________________________________\n");
 							Optional<List<CustomerModel>> o = custService.getAllCustomers();
 							if (o.isPresent()) {
 								List<CustomerModel> model = o.get();
@@ -335,14 +414,14 @@ public class RestaurantOrderManagementSystem {
 								} else {
 									System.out.println(
 											"-------------------------------------------------------------------------");
-									System.out.printf("%-5s %-20s %-30s %-12s %-20s\n", "Id", "Name", "Email",
-											"Contact", "Address");
+									System.out.printf("%-5s %-20s %-30s %-12s %-20s %-20s\n", "Id", "Name", "Email",
+											"Contact", "Address", "Role");
 									System.out.println(
 											"-------------------------------------------------------------------------");
 
-									model.forEach((cust) -> System.out.printf("%-5d %-20s %-30s %-12s %-20s\n",
+									model.forEach((cust) -> System.out.printf("%-5d %-20s %-30s %-12s %-20s %-20s\n",
 											cust.getCustId(), cust.getCustName(), cust.getCustEmail(),
-											cust.getCustContact(), cust.getAddress()));
+											cust.getCustContact(), cust.getAddress(), cust.getRole()));
 
 									System.out.println(
 											"-------------------------------------------------------------------------");
@@ -356,7 +435,7 @@ public class RestaurantOrderManagementSystem {
 						case 3:
 							logger.info("Searching Customer with Email...");
 							sc.nextLine();
-							System.out.println("\n____________________________________________________");
+							System.out.println("\n_______________________________________________________________");
 							System.out.print("Enter Customer Email to Search :");
 							String email = sc.nextLine();
 							if (custService.getCustomerByEmail(email) != null) {
@@ -369,7 +448,7 @@ public class RestaurantOrderManagementSystem {
 						case 4:
 							logger.info("Deleting Customer....");
 							sc.nextLine();
-							System.out.println("\n____________________________________________________");
+							System.out.println("\n______________________________________________________________");
 							System.out.print("Enter Email To Delete Customer:");
 							email = sc.nextLine();
 							if (custService.deleteCustomer(email)) {
@@ -389,13 +468,13 @@ public class RestaurantOrderManagementSystem {
 					logger.info("Entering into staff Menu...");
 					flag = true;
 					do {
-						System.out.println("\n****************STAFF MENU***************");
+						System.out.println("\n*************************STAFF MENU**************************");
 						System.out.println("0:EXIT STAFF MENU");
 						System.out.println("1:ADD NEW STAFF");
 						System.out.println("2:VIEW ALL STAFF");
 						System.out.println("3:SEARCH STAFF");
 						System.out.println("4:DELETE STAFF");
-						System.out.println("*****************************************\n");
+						System.out.println("***************************************************************\n");
 
 						System.out.print("Enter Choice:");
 						switch (sc.nextInt()) {
@@ -414,7 +493,7 @@ public class RestaurantOrderManagementSystem {
 							logger.info("Displaying staff Details...");
 							Thread.sleep(1000);
 							System.out.println("Display All Staff Details......");
-							System.out.println("__________________________________________________________\n");
+							System.out.println("____________________________________________________________\n");
 							Optional<List<StaffModel>> o1 = staffService.getAllStaff();
 							if (o1.isPresent()) {
 								List<StaffModel> model = o1.get();
@@ -425,14 +504,14 @@ public class RestaurantOrderManagementSystem {
 									logger.info("Staff Details Found...");
 									System.out
 											.println("---------------------------------------------------------------");
-									System.out.printf("%-5s %-30s %-30s %-10s %-20s\n", "Id", "Name", "Email",
-											"Contact", "Address");
+									System.out.printf("%-5s %-30s %-30s %-10s %-20s %-20s\n", "Id", "Name", "Email",
+											"Contact", "Address", "Role");
 									System.out
 											.println("---------------------------------------------------------------");
 
-									model.forEach((staff) -> System.out.printf("%-5d %-30s %-30s %-10s %-20s\n",
+									model.forEach((staff) -> System.out.printf("%-5d %-30s %-30s %-10s %-20s %-20s\n",
 											staff.getStaffId(), staff.getStaffName(), staff.getEmail(),
-											staff.getContact(), staff.getAddress()));
+											staff.getContact(), staff.getAddress(), staff.getRole()));
 
 									System.out
 											.println("---------------------------------------------------------------");
@@ -443,7 +522,7 @@ public class RestaurantOrderManagementSystem {
 						case 3:
 							logger.info("Searching Staff By Email..");
 							sc.nextLine();
-							System.out.println("\n____________________________________________________");
+							System.out.println("\n______________________________________________________");
 							System.out.print("Enter Staff Email to Search :");
 							String email = sc.nextLine();
 							if (staffService.getStaffByEmail(email) != null) {
@@ -478,13 +557,13 @@ public class RestaurantOrderManagementSystem {
 					logger.info("Entering Into Food Menu...");
 					flag = true;
 					do {
-						System.out.println("\n*****************FOOD MENU***************");
+						System.out.println("\n*************************FOOD MENU**************************");
 						System.out.println("0:EXIT MENU");
 						System.out.println("1:ADD MENU TYPE");
 						System.out.println("2:VIEW MENU TYPE");
 						System.out.println("3:SEARCH MENU TYPE");
 						System.out.println("4:DELETE MENU TYPE");
-						System.out.println("*****************************************\n");
+						System.out.println("***************************************************************\n");
 
 						System.out.print("Enter Choice:");
 						switch (sc.nextInt()) {
@@ -548,14 +627,14 @@ public class RestaurantOrderManagementSystem {
 					flag = true;
 					do {
 
-						System.out.println("\n*****************DISH MENU***************");
+						System.out.println("\n****************************DISH MENU************************");
 						System.out.println("0:EXIT DISH MENU");
 						System.out.println("1:ADD SINGLE DISH TO MENUTYPE");
 						System.out.println("2:ADD DISHES IN BULK");
 						System.out.println("3:VIEW ALL DISHES");
 						System.out.println("4:SEARCH A DISH BY NAME");
 						System.out.println("5:DELETE DISH BY NAME");
-						System.out.println("*****************************************\n");
+						System.out.println("***************************************************************\n");
 
 						System.out.print("Enter Choice:");
 						switch (sc.nextInt()) {
@@ -666,11 +745,11 @@ public class RestaurantOrderManagementSystem {
 					logger.info("Entering Into Order Menu...");
 					do {
 						flag = true;
-						System.out.println("\n********************ORDER MENU***********************");
+						System.out.println("\n***********************ORDER MENU*****************************");
 						System.out.println("0:Exit");
 						System.out.println("1:VIEW ALL ORDERS");
 						System.out.println("2:VIEW TABLEWISE ORDERS");
-						System.out.println("******************************************************\n");
+						System.out.println("***************************************************************\n");
 
 						System.out.print("Enter Choice:");
 						switch (sc.nextInt()) {
@@ -693,13 +772,13 @@ public class RestaurantOrderManagementSystem {
 								} else {
 									System.out.println(
 											"---------------------------------------------------------------------");
-									System.out.printf("%-8s %-40s %-8s %-8s %-8s\n", "OrderId", "DishName", "Quantity",
-											"Price", "TableNo");
+									System.out.printf("%-8s %-40s %-8s %-8s %-8s %-8s\n", "OrderId", "DishName",
+											"Quantity", "Price", "TableNo", "Status");
 									System.out.println(
 											"---------------------------------------------------------------------");
-									model.forEach((order) -> System.out.printf("%-8d %-40s %-8d %-8d %-8d\n",
+									model.forEach((order) -> System.out.printf("%-8d %-40s %-8d %-8d %-8d %-8s\n",
 											order.getOrderId(), order.getDishName(), order.getQuantity(),
-											order.getPrice(), order.getTableNo()));
+											order.getPrice(), order.getTableNo(), order.getOrderStatus()));
 									System.out.println(
 											"---------------------------------------------------------------------");
 
@@ -747,13 +826,13 @@ public class RestaurantOrderManagementSystem {
 
 		} else if (staffService.validateUser(userEmail1, password1).equalsIgnoreCase("Cashier")) {
 			do {
-				System.out.println("\n*************MENU FOR CASHIER************");
+				System.out.println("\n***********************MENU FOR CASHIER**********************");
 				System.out.println("0:LOGOUT");
 				System.out.println("1:VIEW ALL ORDERS");
 				System.out.println("2:VIEW TABLEWISE ORDERS");
 				System.out.println("3:GENERATE BILL");
 				System.out.println("4:COMPLETE PAYMENT");
-				System.out.println("******************************************\n");
+				System.out.println("***************************************************************\n");
 
 				System.out.print("Enter Choice:");
 				switch (sc.nextInt()) {
@@ -764,7 +843,7 @@ public class RestaurantOrderManagementSystem {
 				case 1:
 					logger.info("Displaying all Orders...");
 					System.out.println("View All Orders");
-					System.out.println("______________________________________________");
+					System.out.println("______________________________________________________________");
 					Optional<List<OrderModel>> od = orderService.viewAllOrders();
 					if (od.isPresent()) {
 						List<OrderModel> model = od.get();
@@ -772,14 +851,14 @@ public class RestaurantOrderManagementSystem {
 							logger.info("No order Found!!!");
 							System.out.println("Order Master is Empty.....");
 						} else {
-							System.out.println("---------------------------------------------------");
+							System.out.println("------------------------------------------------------------");
 							System.out.printf("%-8s %-25s %-8s %-8s %-8s %-8s\n", "OrderId", "DishName", "Quantity",
 									"Price", "TableNo", "OrderStatus");
-							System.out.println("---------------------------------------------------");
+							System.out.println("------------------------------------------------------------");
 							model.forEach((order) -> System.out.printf("%-8d %-25s %-8d %-8d %-8d %-8s\n",
 									order.getOrderId(), order.getDishName(), order.getQuantity(), order.getPrice(),
 									order.getTableNo(), order.getOrderStatus()));
-							System.out.println("---------------------------------------------------");
+							System.out.println("------------------------------------------------------------");
 
 						}
 					} else {
@@ -791,7 +870,7 @@ public class RestaurantOrderManagementSystem {
 				case 2:
 					logger.info("Displaying Order By Table No...");
 					System.out.println("View Orders By Table No");
-					System.out.println("______________________________________________");
+					System.out.println("______________________________________________________________");
 					System.out.print("Enter Table No: ");
 					int tableNo = sc.nextInt();
 					sc.nextLine();
@@ -801,23 +880,26 @@ public class RestaurantOrderManagementSystem {
 						System.out.println("No Orders Found for Table No " + tableNo);
 					} else {
 						System.out.println("Orders for Table No " + tableNo);
-						System.out.println("---------------------------------------------------");
+						System.out.println("------------------------------------------------------------");
 						System.out.printf("%-8s %-25s %-8s %-8s %-8s\n", "OrderId", "DishName", "Quantity", "Price",
 								"TableNo");
-						System.out.println("---------------------------------------------------");
+						System.out.println("------------------------------------------------------------");
 						model.forEach((order) -> System.out.printf("%-8d %-25s %-8d %-8d %-8d\n", order.getOrderId(),
 								order.getDishName(), order.getQuantity(), order.getPrice(), order.getTableNo()));
-						System.out.println("---------------------------------------------------");
+						System.out.println("------------------------------------------------------------");
 
 					}
 					break;
 				case 3:
 					logger.info("Generating Bill...");
+					if(orderService.checkIfCustomerIsNew(userEmail1)) {
+						newUserDis=0.05;
+					}
 					System.out.print("Enter TableNo:");
 					tableNo = sc.nextInt();
 					tableNo1 = tableNo;
 					List<OrderModel> orders = orderService.ViewOrderByTableNo(tableNo);
-					generateBill(orders, orderService);
+					generateBill(orders, orderService,newUserDis);
 					break;
 				case 4:
 					logger.info("Complete Payment Process....");
@@ -826,7 +908,7 @@ public class RestaurantOrderManagementSystem {
 					double amount = sc.nextDouble();
 					if (orderService.completePayment(amount, tableNo1)) {
 						System.out.println("Payment is Completed..");
-						System.out.println("\n___________________________");
+						System.out.println("\n_______________________________________________________________");
 					} else {
 						System.out.println("Payment Not Completed !!! Check Amount ...");
 					}
@@ -875,7 +957,7 @@ public class RestaurantOrderManagementSystem {
 		System.out.println("Verify Email to Proceed...");
 		verificationCode = EmailVerification.generateVerificationCode();
 		EmailVerification.sendVerificationEmail(storedEmail, verificationCode);
-		System.out.print("Verification code sent to your email. Please enter the code:");
+		System.out.print("Please enter the code:");
 		int inputCode = sc.nextInt();
 		if ((verificationCode == inputCode)) {
 			System.out.println("Email Verified Successfully....");
@@ -886,9 +968,7 @@ public class RestaurantOrderManagementSystem {
 			String add = sc.nextLine();
 			System.out.print("Enter Password:");
 			String pass = sc.nextLine();
-			System.out.print("Enter Role:");
-			String role = sc.nextLine();
-			if (custService.isRegisteredCustomer(new CustomerModel(0, name, email, contact, pass, add, role))) {
+			if (custService.isRegisteredCustomer(new CustomerModel(0, name, email, contact, pass, add, "Customer"))) {
 				System.out.println("Registered Successfully");
 				logger.info("Registered Successfully....");
 				return true;
@@ -913,7 +993,7 @@ public class RestaurantOrderManagementSystem {
 		System.out.println("Verify Email to Proceed...");
 		verificationCode = EmailVerification.generateVerificationCode();
 		EmailVerification.sendVerificationEmail(storedEmail, verificationCode);
-		System.out.print("Verification code sent to your email. Please enter the code:");
+		System.out.print("Please enter the code:");
 		int inputCode = sc.nextInt();
 		// System.out.println(verificationCode);
 		// System.out.println(inputCode);
@@ -960,7 +1040,7 @@ public class RestaurantOrderManagementSystem {
 		}
 	}
 
-	private static void showDishes(MenuService menuService, DishService dishService, Scanner sc) {
+	private static boolean showDishes(MenuService menuService, DishService dishService, Scanner sc) {
 		System.out.print("Enter Menu Type:");
 		String type = sc.nextLine();
 		if ((menuService.searchMenuType(type)) != null) {
@@ -972,6 +1052,7 @@ public class RestaurantOrderManagementSystem {
 				dishes.forEach((d) -> System.out.printf("| %-6s | %-40s | %-6s | %-10s |\n", d.getDishId(),
 						d.getDishName(), d.getPrice(), d.getCategory()));
 				System.out.println("----------------------------------------------------------------");
+				return true;
 
 			} else {
 				System.out.println("No dishes are present in the given Menu Type.");
@@ -979,6 +1060,7 @@ public class RestaurantOrderManagementSystem {
 		} else {
 			System.out.println("MenuType Not Found !!!!!!!!");
 		}
+		return false;
 	}
 
 	private static OrderModel placeOrder(Scanner sc, DishService dishService, int tableNo) {
@@ -998,47 +1080,77 @@ public class RestaurantOrderManagementSystem {
 
 	}
 
-	private static void generateBill(List<OrderModel> orders, OrderService orderService) {
-		double totalCost = 0;
-		double GST = 0;
-		double totalAmount = 0;
-		double serviceCharges = 0;
-		for (OrderModel order : orders) {
-			totalCost += order.getPrice() * order.getQuantity();
-			orderIds.add(order.getOrderId());
-		}
-		GST = totalCost * 0.05;
-		serviceCharges = totalCost * 0.10;
-		totalAmount = totalCost + GST + serviceCharges;
-		CustomerModel model = new CustomerModel();
-		System.out.println("Bill Details:");
-		System.out.println("---------------------------------------------------");
-		System.out.printf("%-8s %-25s %-8s %-8s\n", "OrderId", "DishName", "Quantity", "Price");
-		System.out.println("---------------------------------------------------");
-		for (OrderModel order1 : orders) {
-			System.out.printf("%-8d %-25s %-8d %-8d\n", order1.getOrderId(), order1.getDishName(), order1.getQuantity(),
-					order1.getPrice());
-		}
-		System.out.println("---------------------------------------------------");
-		System.out.println("Subtotal: " + totalCost);
-		System.out.println("GST (5%): " + GST);
-		System.out.println("Service Charges(10%):" + serviceCharges);
-		System.out.println("Total Amount: " + totalAmount);
-		System.out.println("Bill Date: " +LocalDate.now() );
-		System.out.println("---------------------------------------------------");
-		BillModel bill = new BillModel();
-		if (!orders.isEmpty()) {
-			bill.setOrderId(orders.get(0).getOrderId());
-			bill.setCurrentDate(LocalDate.now());
-			bill.setSubTotal(totalCost);
-			bill.setGST(GST);
-			bill.setServiceCharges(serviceCharges);
-			bill.setTotal(totalAmount);
-			orderService.generateBill(bill);
-		} else {
-			System.out.println("No Order to generate the bill");
-		}
+	private static void generateBill(List<OrderModel> orders, OrderService orderService,double newUserDiscount) throws InterruptedException {
+	    double totalCost = 0;
+	    double GST = 0;
+	    double totalAmount = 0;
+	    double serviceCharges = 0;
+	    double discount = 0;
+	    double newUserDis=0;
+	    String discountPer="";
+
+	    for (OrderModel order : orders) {
+	        totalCost += order.getPrice() * order.getQuantity();
+	       // orderIds.add(order.getOrderId());
+	    }
+
+	    GST = totalCost * 0.05;
+	    serviceCharges = totalCost * 0.10;
+	    totalAmount = totalCost + GST + serviceCharges;
+	    if (totalAmount > 1000) {
+	        discount = totalAmount * 0.20;
+	        discountPer="20%";
+	    } else if (totalAmount > 500) {
+	        discount = totalAmount * 0.10;
+	        discountPer="10%";
+	    }
+	    totalAmount = totalCost + GST + serviceCharges - discount;
+	    if(newUserDiscount>0) {
+	    	newUserDis=totalAmount*0.05;
+	    }
+	    totalAmount=totalAmount-newUserDis;
+
+	    CustomerModel model = new CustomerModel();
+	    System.out.println("Bill Details:");
+	    System.out.println("--------------------------------------------------------------------------");
+	    System.out.printf("%-8s %-25s %-8s %-8s\n", "OrderId", "DishName", "Quantity", "Price");
+	    System.out.println("--------------------------------------------------------------------------");
+
+	    for (OrderModel order1 : orders) {
+	        System.out.printf("%-8d %-25s %-8d %-8d\n", order1.getOrderId(), order1.getDishName(), order1.getQuantity(), order1.getPrice());
+	    }
+
+	    System.out.println("-------------------------------------------------------------------------");
+	    System.out.println("Subtotal: " + totalCost);
+	    System.out.println("GST (5%): " + GST);
+	    System.out.println("Service Charges(10%):" + serviceCharges);
+	    System.out.println("Discount(On Order Value): "+"("+discountPer+")" + discount);
+	    if(newUserDis>0) {
+	    	System.out.println("New User Discount: "+newUserDis+" (5%)");
+	    }
+	    System.out.println("Total Amount: " + totalAmount);
+	    System.out.println("Bill Date: " + LocalDate.now());
+	    System.out.println("------------------------------------------------------------------------");
+	    Thread.sleep(500);
+	    if(discount>0) {
+	    	System.err.println("\nCongratulations You Have Got "+discountPer+" Discount On Your Bill");
+	    }
+
+	    BillModel bill = new BillModel();
+	    if (!orders.isEmpty()) {
+	        bill.setOrderId(orders.get(0).getOrderId());
+	        bill.setCurrentDate(LocalDate.now());
+	        bill.setSubTotal(totalCost);
+	        bill.setGST(GST);
+	        bill.setServiceCharges(serviceCharges);
+	        bill.setDiscount(discount);
+	        bill.setTotal(totalAmount);
+	        orderService.generateBill(bill);
+	    } else {
+	        System.out.println("No Order to generate the bill");
+	    }
 	}
+
 }
 
 //	logger.info("Display Dishes Under Specific Menu Type...");

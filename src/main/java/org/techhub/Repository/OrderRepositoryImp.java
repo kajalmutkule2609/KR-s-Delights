@@ -6,7 +6,7 @@ import org.techhub.ClientApp.RestaurantOrderManagementSystem;
 import org.techhub.Model.BillModel;
 
 import org.techhub.Model.DishModel;
-
+import org.techhub.Model.FeedBackModel;
 import org.techhub.Model.OrderModel;
 import java.util.*;
 import java.sql.*;
@@ -23,10 +23,9 @@ public class OrderRepositoryImp extends DBUser implements OrderRepository {
 
 	@Override
 	public List<OrderModel> orderPlaced(OrderModel model) {
-		String Query = "Insert into OrderMaster (dishName, quantity, price, tableNo) Values(?,?,?,?)";
 		list = new ArrayList<OrderModel>();
 		try {
-			stmt = conn.prepareStatement(Query);
+			stmt = conn.prepareStatement(Query.addOrder);
 			stmt.setString(1, model.getDishName());
 			stmt.setInt(2, model.getQuantity());
 			stmt.setInt(3, model.getPrice());
@@ -49,10 +48,9 @@ public class OrderRepositoryImp extends DBUser implements OrderRepository {
 	@Override
 	public Optional<List<OrderModel>> viewAllOrders() {
 
-		String Query = "Select * from OrderMaster Order by OrderId asc";
 		list = new ArrayList<OrderModel>();
 		try {
-			stmt = conn.prepareStatement(Query);
+			stmt = conn.prepareStatement(Query.getOrderById);
 			rs = stmt.executeQuery();
 			while (rs.next()) {
 				list.add(new OrderModel(rs.getInt(1), rs.getString(2), rs.getInt(3), rs.getInt(4), rs.getInt(5),rs.getString(6)));
@@ -67,12 +65,9 @@ public class OrderRepositoryImp extends DBUser implements OrderRepository {
 
 	@Override
 	public List<OrderModel> ViewOrderByTableNo(int tableNo) {
-
-
-		String Query = "Select * from OrderMaster where tableNo = ? and OrderStatus='Pending'";
 		list = new ArrayList<OrderModel>();
 		try {
-			stmt = conn.prepareStatement(Query);
+			stmt = conn.prepareStatement(Query.viewPendingOrdersByTableNo);
 			stmt.setInt(1, tableNo);
 			rs = stmt.executeQuery();
 			while (rs.next()) {
@@ -87,11 +82,8 @@ public class OrderRepositoryImp extends DBUser implements OrderRepository {
 
 	@Override
 	public boolean generateBill(BillModel bill) {
-
-
-		String query = "INSERT INTO Bill (orderId, billDate, subtotal, Gst,ServiceCharges, totalBill) VALUES (?, ?, ?, ?, ?, ?)";
 		try {
-			stmt = conn.prepareStatement(query);
+			stmt = conn.prepareStatement(Query.addBill);
 			stmt.setInt(1, bill.getOrderId());
 			stmt.setDate(2, java.sql.Date.valueOf(bill.getCurrentDate()));
 			stmt.setDouble(3, bill.getSubTotal());
@@ -106,30 +98,12 @@ public class OrderRepositoryImp extends DBUser implements OrderRepository {
 		}
 		return false;
 	}
-	public List<OrderModel> getOrdersByOrderNo(int orderNo) {
-
-	   try {
-		   list=new ArrayList<OrderModel>();
-		    stmt= conn.prepareStatement("Select * FROM OrderMaster WHERE orderId=orderNo and orderStatus='pending'");
-		    stmt.setInt(1, orderNo);
-		    rs=stmt.executeQuery();
-		    while(rs.next()) {
-		    	list.add(new OrderModel(rs.getInt(1),rs.getString(2),rs.getInt(3),rs.getInt(4),rs.getInt(5),rs.getString(6)));
-		    }
-		    return list;
-		    
-	   }
-	   catch(Exception ex) {
-		   System.out.println("Error Is:"+ex.getMessage());
-		   logger.error("error in getting orders by orderno");
-	   }
-	 return null;
-	}
+	
 	
 	public boolean getBillByOrderNo(BillModel bill, int orderNo) {
 
 	    try {
-	        stmt = conn.prepareStatement("Select * From Bill Where OrderId=? and orderStatus='pending'");
+	        stmt = conn.prepareStatement(Query.getBillByOrderNo);
 	        stmt.setInt(1, orderNo);
 	        rs = stmt.executeQuery();
 	        while (rs.next()) {
@@ -149,31 +123,15 @@ public class OrderRepositoryImp extends DBUser implements OrderRepository {
 
 	@Override
 	public boolean completePayment(double billAmount,int tableNo) {
-
-	    String query = "UPDATE Bill b "
-	    		+"JOIN OrderMaster o ON b.orderId = o.orderId "
-	    		+"JOIN TableMaster t ON t.tableNo = o.tableNo "
-	    		+"SET b.billstatus = IF(b.TotalBill = ?, 'paid', b.billstatus), "
-	    		    +"o.orderStatus = 'complete', "
-	    		   +"t.userId = NULL, "
-	    		    +"t.status = 0 "
-	    		+"WHERE t.tableNo = ?";
-	    
-	    
 	    try {
-	    	stmt = conn.prepareStatement(query);
+	    	stmt = conn.prepareStatement(Query.updateBillOrderAndTableStatus);
 	        stmt.setDouble(1, billAmount);
 	        stmt.setInt(2, tableNo);
 
 
 	        int result = stmt.executeUpdate();
-	       if(result>0) {
-	    	   query="UPDATE OrderMaster o "
-	   	    		+ "JOIN TableMaster t ON t.tableNo = o.tableNo "
-	   	    		+ "SET o.orderStatus = 'complete' "
-	   	    		+ "WHERE t.tableNo = ? ";
-	    	   
-	    	   stmt = conn.prepareStatement(query);
+	       if(result>0) {	    	   
+	    	   stmt = conn.prepareStatement(Query.updateOrderStatus);
 		        stmt.setInt(1, tableNo);
 		        
 		        result=stmt.executeUpdate();
@@ -187,5 +145,85 @@ public class OrderRepositoryImp extends DBUser implements OrderRepository {
 	    return false;
 	}
 
+	@Override
+	public boolean checkIfCustomerIsNew(String email) {
+		try {
+			stmt=conn.prepareStatement(Query.checkCustomerIsNew);
+			stmt.setString(1, email);
+			rs=stmt.executeQuery();
+			if(rs.next()) {
+				return false;
+			}
+			else {
+				return true;
+			}
+			
+		}
+		catch(Exception ex) {
+			System.out.println("Error Is:"+ex.getMessage());
+		}
+		return false;
+	}
+
+	@Override
+	public boolean getFeedback(FeedBackModel model) {
+	    String query = "Select Email from CustomerFeedback where Email=?";
+	    try {
+	        stmt = conn.prepareStatement(query);
+	        stmt.setString(1, model.getEmail());
+	        rs = stmt.executeQuery();
+	        if (rs.next()) {
+	            query = "update customerFeedback set Feedback=? , Rating=? where email=?";
+	            try {
+	                stmt = conn.prepareStatement(query);
+	                stmt.setString(1, model.getFeedback());
+	                stmt.setString(2,model.getRating());
+	                stmt.setString(3, model.getEmail());
+	                int result = stmt.executeUpdate();
+	                return result > 0;
+	            } catch (Exception ex) {
+	                System.out.println("Error In feedback Model:" + ex.getMessage());
+	            }
+	        } else {
+	            try {
+	                stmt = conn.prepareStatement(Query.addFeedback);
+	                stmt.setString(1, model.getFeedback());
+	                stmt.setString(2,model.getRating());
+	                stmt.setString(3, model.getEmail());
+	                int result = stmt.executeUpdate();
+	                return result > 0;
+	            } catch (Exception ex) {
+	                System.out.println("Error Is:" + ex.getMessage());
+	            }
+	        }
+	    } catch (Exception ex) {
+	        System.out.println("Error Is:" + ex.getMessage());
+	    }
+	    return false;
+	}
+
+
+
+	
 }
+
+//public List<OrderModel> getOrdersByOrderNo(int orderNo) {
+//
+//	   try {
+//		   list=new ArrayList<OrderModel>();
+//		    stmt= conn.prepareStatement("Select * FROM OrderMaster WHERE orderId=orderNo and orderStatus='pending'");
+//		    stmt.setInt(1, orderNo);
+//		    rs=stmt.executeQuery();
+//		    while(rs.next()) {
+//		    	list.add(new OrderModel(rs.getInt(1),rs.getString(2),rs.getInt(3),rs.getInt(4),rs.getInt(5),rs.getString(6)));
+//		    }
+//		    return list;
+//		    
+//	   }
+//	   catch(Exception ex) {
+//		   System.out.println("Error Is:"+ex.getMessage());
+//		   logger.error("error in getting orders by orderno");
+//	   }
+//	 return null;
+//	}
 

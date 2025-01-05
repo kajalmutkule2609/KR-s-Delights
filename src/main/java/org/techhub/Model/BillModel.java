@@ -17,4 +17,5 @@ public class BillModel extends OrderModel {
 	private double GST;
 	private double serviceCharges;
 	private double total;
+	private double discount;
 }

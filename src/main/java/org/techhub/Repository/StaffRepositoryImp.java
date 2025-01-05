@@ -92,4 +92,20 @@ public class StaffRepositoryImp extends DBUser implements StaffRepository {
 		return null;
 	}
 
+	@Override
+	public boolean forgotPassword(String email,String password) {
+		try {
+			stmt=conn.prepareStatement("call forgotPass(?,?)");
+			stmt.setString(1, email);
+			stmt.setString(2, password);
+			int result=stmt.executeUpdate();
+			return result>0;
+		}
+		catch(Exception ex) {
+			System.out.println("Error Is:"+ex.getMessage());
+		}
+		
+		return false;
+	}
+
 }

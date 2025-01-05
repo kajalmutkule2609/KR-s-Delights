@@ -13,4 +13,7 @@ public interface StaffRepository {
 	public boolean deleteStaff(String email);
 
 	public String validateUser(String email, String password);
+	
+	public boolean forgotPassword(String email,String password);
+	
 }

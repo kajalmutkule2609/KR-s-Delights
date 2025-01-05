@@ -29,10 +29,10 @@ public class OrderServiceImp implements OrderService {
 		return orderRepo.generateBill(bill);
 	}
 
-	@Override
-	public List<OrderModel> getOrdersByOrderNo(int orderNo) {
-		return orderRepo.getOrdersByOrderNo(orderNo);
-	}
+//	@Override
+//	public List<OrderModel> getOrdersByOrderNo(int orderNo) {
+//		return orderRepo.getOrdersByOrderNo(orderNo);
+//	}
 
 	@Override
 	public boolean getBillByOrderNo(BillModel bill, int orderNo) {
@@ -43,6 +43,16 @@ public class OrderServiceImp implements OrderService {
 	@Override
 	public boolean completePayment(double billAmount,int tableNo) {
 		return orderRepo.completePayment(billAmount,tableNo);
+	}
+
+	@Override
+	public boolean checkIfCustomerIsNew(String email) {
+		return orderRepo.checkIfCustomerIsNew(email);
+	}
+
+	@Override
+	public boolean getFeedback(FeedBackModel model) {
+		return orderRepo.getFeedback(model);
 	}
 
 }
